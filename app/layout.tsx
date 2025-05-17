@@ -1,8 +1,14 @@
 import DeployButton from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
-import HeaderAuth from "@/components/header-auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/utils/supabase/check-env-vars";
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import ProfileButton from "@/components/profile-button";
+import WorkspaceDropdown from "@/components/workspace-dropdown";
+import CreateButton from "@/components/create-button";
+import HeaderAuth from "@/components/header-auth";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import Link from "next/link";
@@ -23,11 +29,55 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isLoggedIn = !!user;
+
+  let profile = null;
+  let workspaces = null;
+  let currentWorkspace = { id: "", name: "Workspace" };
+
+  if (isLoggedIn) {
+    // Fetch user profile for profile picture
+    const { data } = await supabase
+      .from("profiles")
+      .select("profile_picture")
+      .eq("id", user.id)
+      .single();
+    profile = data;
+
+    // Fetch workspaces (default to "Workspace" if none exist)
+    const { data: wsData } = await supabase
+      .from("workspaces")
+      .select("id, name")
+      .order("created_at", { ascending: true });
+    workspaces = wsData;
+
+    if (!workspaces || workspaces.length === 0) {
+      const { error } = await supabase
+        .from("workspaces")
+        .insert({ name: "Workspace", created_by: user.id });
+
+      if (error) {
+        console.error("Error creating default workspace:", error.message);
+        // Handle error gracefully, but don't redirect
+      } else {
+        const { data: newWorkspaces } = await supabase
+          .from("workspaces")
+          .select("id, name")
+          .order("created_at", { ascending: true });
+        workspaces = newWorkspaces || [];
+      }
+    }
+
+    currentWorkspace = workspaces && workspaces.length > 0 ? workspaces[0] : { id: "", name: "Workspace" };
+  }
+
   return (
     <html lang="en" className={geistSans.className} suppressHydrationWarning>
       <body className="bg-background text-foreground">
@@ -37,17 +87,25 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main className="min-h-screen flex flex-col items-center border-2 border-green-100">
+          <main className="min-h-screen flex flex-col items-center border-2 border-green-100 overflow-x-auto">
             <div className="flex-1 w-full flex flex-col gap-20 items-center border-2 border-green-100">
               <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 mb-20 border-2 border-red-500">
                 <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm border-2 border-red-500">
                   <div className="flex gap-5 items-center font-semibold border-2 border-red-500">
                     <Link href={"/"}>Backloger app for Ёж ЕГЭ</Link>
-                    {/* <div className="flex items-center gap-2">
-                      <DeployButton />
-                    </div> */}
                   </div>
-                  {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
+                  {isLoggedIn ? (
+                    <div className="flex items-center gap-4">
+                      <ProfileButton profilePicture={profile?.profile_picture} email={user?.email} />
+                      <WorkspaceDropdown currentWorkspace={currentWorkspace} workspaces={workspaces || []} />
+                      <CreateButton />
+                      {!hasEnvVars ? <EnvVarWarning /> : null}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
+                    </div>
+                  )}
                 </div>
               </nav>
               <div className="flex flex-col gap-20 max-w-5xl p-5 border-2 border-red-500">
@@ -55,9 +113,7 @@ export default function RootLayout({
               </div>
 
               <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-8 border-2 border-red-500">
-                <p>
-                  Powered by Ёж
-                </p>
+                <p>Powered by Ёж</p>
                 <ThemeSwitcher />
               </footer>
             </div>

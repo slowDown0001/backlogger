@@ -53,6 +53,22 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return encodedRedirect("error", "/sign-in", "User not found");
+  }
+
+  //fetching profile from the databse
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) {
+    return redirect("/profile/setup");
+  }
+
   return redirect("/protected");
 };
 
@@ -132,3 +148,60 @@ export const signOutAction = async () => {
   await supabase.auth.signOut();
   return redirect("/sign-in");
 };
+
+export async function setupProfileAction(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return encodedRedirect("error", "/profile/setup", "User not found");
+  }
+
+  const name = formData.get("name") as string;
+  const role = formData.get("role") as string;
+  const profilePicture = formData.get("profile_picture") as File | null;
+
+  if (!name || !role) {
+    return encodedRedirect("error", "/profile/setup", "Name and role are required");
+  }
+
+  // if (!["Designer", "Software Developer"].includes(role)) {
+  //   return encodedRedirect("error", "/profile/setup", "Invalid role selected");
+  // }
+
+  let profilePictureUrl = null;
+  if (profilePicture) {
+    const fileExt = profilePicture.name.split(".").pop();
+    const fileName = `user_${user.id}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from("profile_pictures")
+      .upload(fileName, profilePicture, {
+        upsert: true,
+      });
+
+    if (uploadError) {
+      return encodedRedirect("error", "/profile/setup", uploadError.message);
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("profile_pictures")
+      .getPublicUrl(fileName);
+    profilePictureUrl = publicUrl;
+  }
+
+  const { error: insertError } = await supabase
+    .from("profiles")
+    .insert({
+      id: user.id,
+      email: user.email,
+      name,
+      role,
+      profile_picture: profilePictureUrl,
+    });
+
+  if (insertError) {
+    return encodedRedirect("error", "/profile/setup", insertError.message);
+  }
+
+  return redirect("/protected");
+}

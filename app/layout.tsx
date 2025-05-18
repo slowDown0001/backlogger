@@ -12,6 +12,7 @@ import HeaderAuth from "@/components/header-auth";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import Link from "next/link";
+import { signOutAction } from "@/app/actions";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -38,42 +39,16 @@ export default async function RootLayout({
   const { data: { user } } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
 
-  let profile = null;
   let workspaces = null;
   let currentWorkspace = { id: "", name: "Workspace" };
 
   if (isLoggedIn) {
-    // Fetch user profile for profile picture
-    const { data } = await supabase
-      .from("profiles")
-      .select("profile_picture")
-      .eq("id", user.id)
-      .single();
-    profile = data;
-
-    // Fetch workspaces (default to "Workspace" if none exist)
+    // Fetch workspaces
     const { data: wsData } = await supabase
       .from("workspaces")
       .select("id, name")
       .order("created_at", { ascending: true });
     workspaces = wsData;
-
-    if (!workspaces || workspaces.length === 0) {
-      const { error } = await supabase
-        .from("workspaces")
-        .insert({ name: "Workspace", created_by: user.id });
-
-      if (error) {
-        console.error("Error creating default workspace:", error.message);
-        // Handle error gracefully, but don't redirect
-      } else {
-        const { data: newWorkspaces } = await supabase
-          .from("workspaces")
-          .select("id, name")
-          .order("created_at", { ascending: true });
-        workspaces = newWorkspaces || [];
-      }
-    }
 
     currentWorkspace = workspaces && workspaces.length > 0 ? workspaces[0] : { id: "", name: "Workspace" };
   }
@@ -96,9 +71,14 @@ export default async function RootLayout({
                   </div>
                   {isLoggedIn ? (
                     <div className="flex items-center gap-4">
-                      <ProfileButton profilePicture={profile?.profile_picture} email={user?.email} />
+                      <ProfileButton userId={user?.id} email={user?.email} />
                       <WorkspaceDropdown currentWorkspace={currentWorkspace} workspaces={workspaces || []} />
                       <CreateButton />
+                      <form action={signOutAction}>
+                        <button type="submit" className="text-sm text-foreground underline">
+                          Sign Out
+                        </button>
+                      </form>
                       {!hasEnvVars ? <EnvVarWarning /> : null}
                     </div>
                   ) : (

@@ -32,26 +32,12 @@ export default async function ProfileSetup({ searchParams }: { searchParams: Pro
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="role">Role</Label>
-          <select
+          <Input
             id="role"
             name="role"
-            className="p-2 border rounded"
+            placeholder="Your role (e.g., Designer, Developer)"
             required
-          >
-            <option value="">Select a role</option>
-            <option value="Designer">Designer</option>
-            <option value="Software Developer">Software Developer</option>
-          </select>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="profile_picture">Profile Picture (optional)</Label>
-          <Input
-            id="profile_picture"
-            name="profile_picture"
-            type="file"
-            accept="image/*"
           />
-          <p className="text-sm text-gray-500">Leave blank to skip uploading a picture.</p>
         </div>
         <SubmitButton formAction={setupProfileAction} pendingText="Saving...">
           Save Profile

@@ -2,7 +2,7 @@
 
 import { encodedRedirect } from "@/utils/utils";
 import { createClient } from "@/utils/supabase/server";
-import { headers } from "next/headers";
+import { headers } from "next/headers";//To read where the request came from (used in email links).
 import { redirect } from "next/navigation";
 
 export const signUpAction = async (formData: FormData) => {

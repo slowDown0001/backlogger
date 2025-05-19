@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { FormMessage, Message } from "@/components/form-message";
+import Tile from "@/components/tile";
 
 export default async function ProtectedPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const supabase = await createClient();
@@ -51,7 +52,7 @@ export default async function ProtectedPage({ searchParams }: { searchParams: Pr
   const tileIds = tiles?.map(tile => tile.id) || [];
   const { data: tasks, error: tasksError } = await supabase
     .from("tasks")
-    .select("id, tile_id, title, position, is_completed")
+    .select("id, tile_id, title, description, position, is_completed, created_by")
     .in("tile_id", tileIds)
     .order("position", { ascending: true });
 
@@ -83,31 +84,13 @@ export default async function ProtectedPage({ searchParams }: { searchParams: Pr
       <h1 className="text-3xl font-bold">{workspace.name}</h1>
       <div className="flex gap-4 overflow-x-auto">
         {tilesWithTasks.map(tile => (
-          <div
+          <Tile
             key={tile.id}
-            className="flex-shrink-0 w-64 bg-gray-100 dark:bg-gray-800 rounded-lg p-4"
-            style={{ minHeight: "600px", height: "auto" }}
-          >
-            <h2 className="text-xl font-semibold mb-4">{tile.title}</h2>
-            <div className="flex flex-col gap-2">
-              {tile.tasks.length > 0 ? (
-                tile.tasks.map(task => (
-                  <div
-                    key={task.id}
-                    className={`p-3 rounded-md ${
-                      task.is_completed
-                        ? "bg-green-200 dark:bg-green-700"
-                        : "bg-white dark:bg-gray-700"
-                    } shadow-sm`}
-                  >
-                    <p className="text-sm">{task.title}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">No tasks yet.</p>
-              )}
-            </div>
-          </div>
+            id={tile.id}
+            title={tile.title}
+            tasks={tile.tasks}
+            currentUserId={user.id}
+          />
         ))}
       </div>
     </div>

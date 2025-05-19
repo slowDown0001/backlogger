@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import TaskModal from "./task-modal";
+import { Draggable } from "@adaptabletools/react-beautiful-dnd";
 
 interface TaskProps {
   id: string;
@@ -11,13 +12,13 @@ interface TaskProps {
   isCompleted: boolean;
   createdBy: string;
   currentUserId: string;
+  index: number;
 }
 
-export default function Task({ id, title: initialTitle, description: initialDescription, isCompleted: initialIsCompleted, createdBy, currentUserId }: TaskProps) {
+export default function Task({ id, title: initialTitle, description: initialDescription, isCompleted: initialIsCompleted, createdBy, currentUserId, index }: TaskProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [taskData, setTaskData] = useState({ title: initialTitle, description: initialDescription || "", isCompleted: initialIsCompleted });
 
-  // Fetch the latest task data when the modal opens
   useEffect(() => {
     const fetchTask = async () => {
       const supabase = createClient();
@@ -43,7 +44,6 @@ export default function Task({ id, title: initialTitle, description: initialDesc
     }
   }, [id, isModalOpen]);
 
-  // Callback to update task data after saving in modal
   const handleUpdate = (updatedTitle: string, updatedDescription: string) => {
     setTaskData(prev => ({
       ...prev,
@@ -53,25 +53,33 @@ export default function Task({ id, title: initialTitle, description: initialDesc
   };
 
   return (
-    <>
-      <div
-        className={`p-3 rounded-md ${
-          taskData.isCompleted ? "bg-green-200 dark:bg-green-700" : "bg-white dark:bg-gray-700"
-        } shadow-sm cursor-pointer`}
-        onClick={() => setIsModalOpen(true)}
-      >
-        <p className="text-sm">{taskData.title}</p>
-      </div>
-      {isModalOpen && (
-        <TaskModal
-          id={id}
-          title={taskData.title}
-          description={taskData.description}
-          isEditable={createdBy === currentUserId}
-          onClose={() => setIsModalOpen(false)}
-          onUpdate={handleUpdate}
-        />
+    <Draggable draggableId={id} index={index}>
+      {(provided) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+        >
+          <div
+            className={`p-3 rounded-md ${
+              taskData.isCompleted ? "bg-green-200 dark:bg-green-700" : "bg-white dark:bg-gray-700"
+            } shadow-sm cursor-pointer`}
+            onClick={() => setIsModalOpen(true)}
+          >
+            <p className="text-sm">{taskData.title}</p>
+          </div>
+          {isModalOpen && (
+            <TaskModal
+              id={id}
+              title={taskData.title}
+              description={taskData.description}
+              isEditable={createdBy === currentUserId}
+              onClose={() => setIsModalOpen(false)}
+              onUpdate={handleUpdate}
+            />
+          )}
+        </div>
       )}
-    </>
+    </Draggable>
   );
 }

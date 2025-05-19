@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { FormMessage, Message } from "@/components/form-message";
-import Tile from "@/components/tile";
+import DragDropWrapper from "@/components/drag-drop-wrapper";
 
 export default async function ProtectedPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const supabase = await createClient();
@@ -82,17 +82,10 @@ export default async function ProtectedPage({ searchParams }: { searchParams: Pr
     <div className="flex-1 w-full flex flex-col gap-6 p-4">
       {message && <FormMessage message={message} />}
       <h1 className="text-3xl font-bold">{workspace.name}</h1>
-      <div className="flex gap-4 overflow-x-auto">
-        {tilesWithTasks.map(tile => (
-          <Tile
-            key={tile.id}
-            id={tile.id}
-            title={tile.title}
-            tasks={tile.tasks}
-            currentUserId={user.id}
-          />
-        ))}
-      </div>
+      <DragDropWrapper
+        tilesWithTasks={tilesWithTasks}
+        currentUserId={user.id}
+      />
     </div>
   );
 }

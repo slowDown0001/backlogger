@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Task from "./task";
+import { Droppable } from "@adaptabletools/react-beautiful-dnd";
 
 interface TileProps {
   id: string;
@@ -141,23 +142,33 @@ export default function Tile({ id, title: initialTitle, tasks: initialTasks, cur
           )}
         </div>
       </div>
-      <div className="flex flex-col gap-2">
-        {tasks.length > 0 ? (
-          tasks.map(task => (
-            <Task
-              key={task.id}
-              id={task.id}
-              title={task.title}
-              description={task.description}
-              isCompleted={task.is_completed}
-              createdBy={task.created_by}
-              currentUserId={currentUserId}
-            />
-          ))
-        ) : (
-          <p className="text-sm text-gray-500">No tasks yet.</p>
+      <Droppable droppableId={id}>
+        {(provided) => (
+          <div
+            className="flex flex-col gap-2"
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+          >
+            {tasks.length > 0 ? (
+              tasks.map((task, index) => (
+                <Task
+                  key={task.id}
+                  id={task.id}
+                  title={task.title}
+                  description={task.description}
+                  isCompleted={task.is_completed}
+                  createdBy={task.created_by}
+                  currentUserId={currentUserId}
+                  index={index}
+                />
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No tasks yet.</p>
+            )}
+            {provided.placeholder}
+          </div>
         )}
-      </div>
+      </Droppable>
       <button
         onClick={handleAddTask}
         className="mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"

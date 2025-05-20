@@ -1,104 +1,121 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Tile from "./tile";
-import { DragDropContext } from "@adaptabletools/react-beautiful-dnd";
+import { DragDropContext, DropResult } from "@adaptabletools/react-beautiful-dnd";
 import { createClient } from "@/utils/supabase/client";
 
-interface DragDropWrapperProps {
-  tilesWithTasks: { id: string; title: string; tasks: { id: string; tile_id: string; title: string; description?: string; position: number; is_completed: boolean; created_by: string }[] }[];
+interface Task {
+  id: string;
+  tile_id: string;
+  title: string;
+  description?: string;
+  position: number;
+  is_completed: boolean;
+  created_by: string;
+}
+
+interface TileWithTasks {
+  id: string;
+  title: string;
+  tasks: Task[];
+}
+
+export interface DragDropWrapperProps {
+  tilesWithTasks: TileWithTasks[];
   currentUserId: string;
 }
 
-export default function DragDropWrapper({ tilesWithTasks: initialTilesWithTasks, currentUserId }: DragDropWrapperProps) {
-  const [tilesWithTasks, setTilesWithTasks] = useState(initialTilesWithTasks);
+export default function DragDropWrapper({ 
+  tilesWithTasks: initialTilesWithTasks, 
+  currentUserId 
+}: DragDropWrapperProps) {
+  const [tilesWithTasks, setTilesWithTasks] = useState<TileWithTasks[]>(initialTilesWithTasks);
 
-  const handleDragEnd = async (result: any) => {
+  useEffect(() => {
+    setTilesWithTasks(initialTilesWithTasks);
+  }, [initialTilesWithTasks]);
+
+  const handleDragEnd = async (result: DropResult) => {
     const { source, destination } = result;
-
-    // If no destination, return
+    
+    // Early returns for invalid states
     if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    const supabase = createClient();
+    // Save original state for potential revert
+    const originalTiles = [...tilesWithTasks];
 
-    // Copy the current state
-    const newTilesWithTasks = [...tilesWithTasks];
+    try {
+      // Optimistic update
+      const newTilesWithTasks = [...tilesWithTasks];
+      const sourceTileIndex = newTilesWithTasks.findIndex(tile => tile.id === source.droppableId);
+      const destTileIndex = newTilesWithTasks.findIndex(tile => tile.id === destination.droppableId);
 
-    // Find source and destination tiles
-    const sourceTileIndex = newTilesWithTasks.findIndex(tile => tile.id === source.droppableId);
-    const destTileIndex = newTilesWithTasks.findIndex(tile => tile.id === destination.droppableId);
+      if (sourceTileIndex === -1 || destTileIndex === -1) return;
 
-    if (sourceTileIndex === -1 || destTileIndex === -1) return;
+      const sourceTasks = [...newTilesWithTasks[sourceTileIndex].tasks];
+      const [movedTask] = sourceTasks.splice(source.index, 1);
 
-    const sourceTasks = [...newTilesWithTasks[sourceTileIndex].tasks];
-    const [movedTask] = sourceTasks.splice(source.index, 1);
+      let destTasks: any[] = [];
+      if (source.droppableId === destination.droppableId) {
+        // Same tile reordering
+        sourceTasks.splice(destination.index, 0, movedTask);
+        newTilesWithTasks[sourceTileIndex] = {
+          ...newTilesWithTasks[sourceTileIndex],
+          tasks: sourceTasks,
+        };
+      } else {
+        // Different tile movement
+        destTasks = [...newTilesWithTasks[destTileIndex].tasks];
+        destTasks.splice(destination.index, 0, { ...movedTask, tile_id: destination.droppableId });
 
-    if (source.droppableId === destination.droppableId) {
-      // Reordering within the same tile
-      sourceTasks.splice(destination.index, 0, movedTask);
-      newTilesWithTasks[sourceTileIndex] = {
-        ...newTilesWithTasks[sourceTileIndex],
-        tasks: sourceTasks,
-      };
-
-      // Update positions in the database
-      const updatedTasks = sourceTasks.map((task, index) => ({
-        ...task,
-        position: index + 1,
-      }));
-
-      for (const task of updatedTasks) {
-        await supabase
-          .from("tasks")
-          .update({ position: task.position })
-          .eq("id", task.id);
+        newTilesWithTasks[sourceTileIndex] = {
+          ...newTilesWithTasks[sourceTileIndex],
+          tasks: sourceTasks,
+        };
+        newTilesWithTasks[destTileIndex] = {
+          ...newTilesWithTasks[destTileIndex],
+          tasks: destTasks,
+        };
       }
 
       setTilesWithTasks(newTilesWithTasks);
-    } else {
-      // Moving between tiles
-      const destTasks = [...newTilesWithTasks[destTileIndex].tasks];
-      destTasks.splice(destination.index, 0, movedTask);
 
-      newTilesWithTasks[sourceTileIndex] = {
-        ...newTilesWithTasks[sourceTileIndex],
-        tasks: sourceTasks,
-      };
-      newTilesWithTasks[destTileIndex] = {
-        ...newTilesWithTasks[destTileIndex],
-        tasks: destTasks,
-      };
+      // Server update using provided PostgreSQL functions
+      const supabase = createClient();
+      if (source.droppableId === destination.droppableId) {
+        // Reordering within the same tile
+        const taskIds = sourceTasks.map(t => t.id);
+        const positions = sourceTasks.map((_, i) => i + 1);
+        const { error } = await supabase.rpc('update_task_positions', {
+          task_ids: taskIds,
+          new_positions: positions
+        });
+        if (error) throw error;
+      } else {
+        // Moving between tiles
+        const sourceTaskIds = sourceTasks.map(t => t.id);
+        const sourcePositions = sourceTasks.map((_, i) => i + 1);
+        const destTaskIds = destTasks.map(t => t.id);
+        const destPositions = destTasks.map((_, i) => i + 1);
 
-      // Update positions and tile_id in the database
-      const updatedSourceTasks = sourceTasks.map((task, index) => ({
-        ...task,
-        position: index + 1,
-      }));
-      const updatedDestTasks = destTasks.map((task, index) => ({
-        ...task,
-        position: index + 1,
-      }));
-
-      // Update source tile tasks
-      for (const task of updatedSourceTasks) {
-        await supabase
-          .from("tasks")
-          .update({ position: task.position })
-          .eq("id", task.id);
-      }
-
-      // Update destination tile tasks (including the moved task's tile_id)
-      for (const task of updatedDestTasks) {
-        await supabase
-          .from("tasks")
-          .update({
-            tile_id: newTilesWithTasks[destTileIndex].id,
-            position: task.position,
+        await Promise.all([
+          supabase.rpc('update_task_positions', {
+            task_ids: sourceTaskIds,
+            new_positions: sourcePositions
+          }),
+          supabase.rpc('update_task_positions_and_tile', {
+            task_ids: destTaskIds,
+            new_positions: destPositions,
+            new_tile_id: destination.droppableId
           })
-          .eq("id", task.id);
+        ]);
       }
-
-      setTilesWithTasks(newTilesWithTasks);
+    } catch (error) {
+      console.error("Update failed:", error);
+      // Revert to original state on error
+      setTilesWithTasks(originalTiles);
     }
   };
 
@@ -106,13 +123,7 @@ export default function DragDropWrapper({ tilesWithTasks: initialTilesWithTasks,
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="flex gap-4 overflow-x-auto">
         {tilesWithTasks.map(tile => (
-          <Tile
-            key={tile.id}
-            id={tile.id}
-            title={tile.title}
-            tasks={tile.tasks}
-            currentUserId={currentUserId}
-          />
+          <Tile key={tile.id} {...tile} currentUserId={currentUserId} />
         ))}
       </div>
     </DragDropContext>

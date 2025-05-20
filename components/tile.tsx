@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Task from "./task";
 import { Droppable } from "@adaptabletools/react-beautiful-dnd";
@@ -12,16 +12,10 @@ interface TileProps {
   currentUserId: string;
 }
 
-export default function Tile({ id, title: initialTitle, tasks: initialTasks, currentUserId }: TileProps) {
-  const [tasks, setTasks] = useState(initialTasks);
+export default function Tile({ id, title: initialTitle, tasks, currentUserId }: TileProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(initialTitle);
-
-  useEffect(() => {
-    setTasks(initialTasks);
-    setTitle(initialTitle);
-  }, [initialTasks, initialTitle]);
 
   const handleAddTask = async () => {
     const supabase = createClient();
@@ -45,7 +39,8 @@ export default function Tile({ id, title: initialTitle, tasks: initialTasks, cur
         .select("*")
         .eq("tile_id", id)
         .order("position", { ascending: true });
-      setTasks(newTasks || []);
+      // Note: This won't update the parent state directly; consider a refresh or parent update
+      window.location.reload(); // Temporary fix
     }
   };
 

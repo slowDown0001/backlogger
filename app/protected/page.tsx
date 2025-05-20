@@ -1,9 +1,13 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { FormMessage, Message } from "@/components/form-message";
-import DragDropWrapper from "@/components/drag-drop-wrapper";
+import { BoardWrapper } from "@/components/error-boundaries";
 
-export default async function ProtectedPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+export default async function ProtectedPage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const supabase = await createClient();
 
   // Check if user is authenticated
@@ -61,6 +65,11 @@ export default async function ProtectedPage({ searchParams }: { searchParams: Pr
     return redirect("/sign-in");
   }
 
+  // Add this check
+  if (!tasks) {
+    return <div>Loading tasks...</div>;
+  }
+
   // Group tasks by tile
   const tilesWithTasks = tiles?.map(tile => ({
     ...tile,
@@ -82,7 +91,8 @@ export default async function ProtectedPage({ searchParams }: { searchParams: Pr
     <div className="flex-1 w-full flex flex-col gap-6 p-4">
       {message && <FormMessage message={message} />}
       <h1 className="text-3xl font-bold">{workspace.name}</h1>
-      <DragDropWrapper
+      
+      <BoardWrapper
         tilesWithTasks={tilesWithTasks}
         currentUserId={user.id}
       />

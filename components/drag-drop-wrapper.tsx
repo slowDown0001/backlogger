@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Tile from "./tile";
-import { DragDropContext, DropResult } from "@adaptabletools/react-beautiful-dnd";
+import { DragDropContext } from "@/components/drag-drop";
 import { createClient } from "@/utils/supabase/client";
+import { DropResult } from "@adaptabletools/react-beautiful-dnd";
 
 interface Task {
   id: string;

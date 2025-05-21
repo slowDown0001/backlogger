@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Task from "./task";
-import { Droppable } from "@adaptabletools/react-beautiful-dnd";
+import { Droppable } from "@/components/drag-drop";
 
 interface TileProps {
   id: string;

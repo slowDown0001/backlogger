@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import TaskModal from "./task-modal";
-import { Draggable } from "@adaptabletools/react-beautiful-dnd";
+import { Draggable } from "@/components/drag-drop";
 
 interface TaskProps {
   id: string;

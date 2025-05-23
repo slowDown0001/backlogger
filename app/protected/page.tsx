@@ -95,6 +95,7 @@ export default async function ProtectedPage({
       <BoardWrapper
         tilesWithTasks={tilesWithTasks}
         currentUserId={user.id}
+        workspaceId={workspaceId} // Add workspaceId prop
       />
     </div>
   );

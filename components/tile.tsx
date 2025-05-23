@@ -15,9 +15,16 @@ interface Task {
   created_by: string;
 }
 
+// interface TileWithTasks {
+//   id: string;
+//   title: string;
+//   tasks: Task[];
+// }
+
 interface TileWithTasks {
   id: string;
   title: string;
+  position: number; // Added
   tasks: Task[];
 }
 

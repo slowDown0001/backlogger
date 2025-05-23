@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Tile from "./tile";
 import { DragDropContext } from "@/components/drag-drop";
 import { createClient } from "@/utils/supabase/client";
@@ -35,6 +35,8 @@ export default function DragDropWrapper({
   workspaceId,
 }: DragDropWrapperProps) {
   const [tilesWithTasks, setTilesWithTasks] = useState<TileWithTasks[]>(initialTilesWithTasks);
+  const [shouldCenter, setShouldCenter] = useState(true); // Track if tiles should be centered
+  const containerRef = useRef<HTMLDivElement>(null); // Ref to the container div
 
   // 🔄 Refresh board data from Supabase
   const refreshData = async () => {
@@ -116,6 +118,38 @@ export default function DragDropWrapper({
     }
   };
 
+
+
+    // Function to calculate total width and determine centering
+  const updateCentering = () => {
+    if (!containerRef.current) return;
+
+    const containerWidth = containerRef.current.clientWidth;
+    const tileWidth = 256; // w-64 = 256px
+    const gap = 16; // gap-4 = 16px
+    const totalTilesWidth =
+      tilesWithTasks.length * tileWidth + (tilesWithTasks.length - 1) * gap;
+
+    // Include the width of the "Add Tile" button (w-16 = 64px)
+    const totalContentWidth = totalTilesWidth + 64;
+
+    // If the content width is less than the container width, center the tiles
+    setShouldCenter(totalContentWidth < containerWidth);
+
+    // Reset scroll position to the left if centering
+    if (totalContentWidth < containerWidth && containerRef.current) {
+      containerRef.current.scrollLeft = 0;
+    }
+  };  
+
+    // Update centering on mount, resize, and when tiles change
+  useEffect(() => {
+    updateCentering();
+    window.addEventListener("resize", updateCentering);
+    return () => window.removeEventListener("resize", updateCentering);
+  }, [tilesWithTasks]);
+
+
   const handleDragEnd = async (result: DropResult) => {
     const { source, destination } = result;
 
@@ -193,7 +227,12 @@ export default function DragDropWrapper({
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 overflow-x-auto">
+      <div
+        ref={containerRef}
+        className={`flex gap-4 w-screen px-2 overflow-x-auto bg-white/70 dark:bg-gray-800/70 ${
+          shouldCenter ? "justify-center" : "justify-start"
+        }`}
+      >
         {tilesWithTasks.map((tile) => (
           <Tile
             key={tile.id}

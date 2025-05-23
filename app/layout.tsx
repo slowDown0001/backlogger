@@ -82,15 +82,18 @@ export default async function RootLayout({
                       {!hasEnvVars ? <EnvVarWarning /> : null}
                     </div>
                   ) : (
-                    <div className="flex items-center gap-4">
-                      {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
+                    <div className="flex flex-col gap-20 max-w-5xl p-5 border-2 border-red-500">
+                      {children}
                     </div>
                   )}
                 </div>
               </nav>
-              <div className="flex flex-col gap-20 max-w-5xl p-5 border-2 border-red-500">
+
+
+              <div className="flex-1 w-full flex flex-col border-red-500">
                 {children}
               </div>
+
 
               <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-8 border-2 border-red-500">
                 <p>Powered by Ёж</p>

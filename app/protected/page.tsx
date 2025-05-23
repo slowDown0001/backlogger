@@ -88,9 +88,11 @@ export default async function ProtectedPage({
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col gap-6 p-4">
+    <div className="flex-1 w-screen flex flex-col gap-6">
       {message && <FormMessage message={message} />}
-      <h1 className="text-3xl font-bold">{workspace.name}</h1>
+      <h1 className="text-3xl font-bold px-2 text-center">
+        {workspace.name}
+      </h1>
       
       <BoardWrapper
         tilesWithTasks={tilesWithTasks}

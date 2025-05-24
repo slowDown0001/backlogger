@@ -21,6 +21,7 @@ interface TileWithTasks {
   title: string;
   position: number;
   tasks: Task[];
+  color: string;
 }
 
 export interface DragDropWrapperProps {
@@ -44,8 +45,8 @@ export default function DragDropWrapper({
 
     const { data: tiles, error: tilesError } = await supabase
       .from("tiles")
-      .select("id, title, position")
-      .eq("workspace_id", workspaceId) // Added filter to match page.tsx
+      .select("id, title, position, color")
+      .eq("workspace_id", workspaceId)
       .order("position", { ascending: true });
 
     if (tilesError || !tiles) {
@@ -85,6 +86,7 @@ export default function DragDropWrapper({
       title: "New Column",
       position: maxPosition + 1,
       tasks: [],
+      color: 'default',
     };
 
     // ✅ Optimistically update board

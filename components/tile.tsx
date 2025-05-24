@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Task from "./task";
 import { Droppable } from "@/components/drag-drop";
@@ -26,6 +26,7 @@ interface TileWithTasks {
   title: string;
   position: number; // Added
   tasks: Task[];
+  color: string; // Add color field
 }
 
 interface TileProps {
@@ -33,6 +34,7 @@ interface TileProps {
   title: string;
   tasks: Task[];
   currentUserId: string;
+  color: string; // Add color prop
   onTasksUpdate: (updater?: (prev: TileWithTasks[]) => TileWithTasks[]) => void;
 }
 
@@ -40,12 +42,25 @@ export default function Tile({
   id,
   title: initialTitle,
   tasks,
+  color, // Add this line
   currentUserId,
   onTasksUpdate,
 }: TileProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(initialTitle);
+
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleAddTask = async () => {
     const supabase = createClient();
@@ -161,8 +176,30 @@ export default function Tile({
     }
   };
 
+  const handleChangeColor = async (newColor: string) => {
+    // Optimistically update the tile's color
+    onTasksUpdate((prev) =>
+      prev.map((tile) =>
+        tile.id === id ? { ...tile, color: newColor } : tile
+      )
+    );
+
+    // Update in Supabase
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("tiles")
+      .update({ color: newColor })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating tile color:", error.message);
+      // Revert on error
+      onTasksUpdate();
+    }
+  };
+
   return (
-    <div className="relative flex-shrink-0 w-64 bg-gray-100 dark:bg-gray-800 rounded-lg p-4" style={{ minHeight: "600px", height: "auto" }}>
+    <div className={`relative flex-shrink-0 w-64 rounded-lg p-4 ${color === 'yellow' ? 'bg-yellow-200 dark:bg-yellow-700' : color === 'green' ? 'bg-green-200 dark:bg-green-700' : color === 'red' ? 'bg-red-200 dark:bg-red-700' : 'bg-gray-100 dark:bg-gray-800'}`} style={{ minHeight: "600px", height: "auto" }}>
       <div className="flex justify-between items-center mb-4">
         {isEditingTitle ? (
           <input
@@ -182,7 +219,7 @@ export default function Tile({
             ⋮
           </button>
           {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-10">
+            <div ref={menuRef} className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-10">
               <button
                 onClick={() => {
                   setIsEditingTitle(true);
@@ -201,6 +238,7 @@ export default function Tile({
               >
                 Add a Card
               </button>
+              
               <button
                 onClick={() => {
                   handleRemoveTile();
@@ -210,6 +248,40 @@ export default function Tile({
               >
                 Remove Tile
               </button>
+              <div className="flex w-full px-4 py-2 gap-2">
+                <span
+                  onClick={() => {
+                    handleChangeColor('yellow');
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-6 h-6 rounded-full bg-yellow-200 dark:bg-yellow-700 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
+                  aria-label="Yellow"
+                />
+                <span
+                  onClick={() => {
+                    handleChangeColor('green');
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-6 h-6 rounded-full bg-green-200 dark:bg-green-700 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
+                  aria-label="Green"
+                />
+                <span
+                  onClick={() => {
+                    handleChangeColor('red');
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-6 h-6 rounded-full bg-red-200 dark:bg-red-700 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
+                  aria-label="Red"
+                />
+                <span
+                  onClick={() => {
+                    handleChangeColor('default');
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
+                  aria-label="Default"
+                />
+              </div>
             </div>
           )}
         </div>

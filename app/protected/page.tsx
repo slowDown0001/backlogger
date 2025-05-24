@@ -43,7 +43,7 @@ export default async function ProtectedPage({
   // Fetch tiles for the workspace
   const { data: tiles, error: tilesError } = await supabase
     .from("tiles")
-    .select("id, title, position")
+    .select("id, title, position, color")
     .eq("workspace_id", workspaceId)
     .order("position", { ascending: true });
 

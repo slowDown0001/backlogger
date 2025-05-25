@@ -1,104 +1,243 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# 📌 Kanban Board
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+A modern, interactive Kanban board built with **Next.js**, **TypeScript**, **React**, **Supabase**, and **Tailwind CSS**.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+This application allows users to manage tasks and projects efficiently with:
+- ✅ A clean interface
+- ✅ Optimistic UI updates
+- ✅ Real-time synchronization with a Supabase backend
 
-## Features
+---
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+## 🚀 Features
 
-## Demo
+### 🔐 Supabase Authentication
+- Secure user authentication using **Supabase Auth**
+- Users must sign in to access the Kanban board
+- Profile setup required on first login
+  - Auto-redirection to `/profile/setup` if incomplete
+- Supports workspace selection
+  - Defaults to a predefined workspace ID if none set
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+---
 
-## Deploy to Vercel
+### 📁 Workspaces
+- Tasks and tiles are organized within **user-specific workspaces**
+- Each workspace is fetched from Supabase and displayed with its name at the top of the board
+- Supports multiple workspaces
+  - Workspace switching via `last_workspace_id` stored in the user profile
 
-Vercel deployment will guide you through creating a Supabase account and project.
+---
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+### 🧱 Tiles (Columns)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+Create, edit, and delete tiles to organize tasks into columns like "To Do", "In Progress", etc.
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+#### ✅ Core Features:
+- **Optimistic UI updates** for adding, editing, and deleting tiles
+  - Reverts gracefully on failure
+- Tiles ordered by position
+- Fetched dynamically from Supabase
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+#### 🎨 Color Customization:
+- Users can set tile colors: Yellow, Green, Red, or Default
+  - Done via a 3-dot menu (`⋮`)
+- Colors reflected as background colors (e.g., `bg-yellow-200`, `dark:bg-yellow-600`)
+- Color options shown as clickable circles in the modal for intuitive selection
+- Color updates pushed to Supabase once selected
 
-## Clone and run locally
+---
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+### 📝 Tasks (Cards)
 
-2. Create a Next.js app using the Supabase Starter template npx command
+Add, edit, delete, and drag tasks within and across tiles.
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+#### ✅ Task Features:
+- Supports: title, description, completion status (`is_completed`), creator (`created_by`)
+- Drag-and-Drop powered by `react-beautiful-dnd`
+  - Tasks reordered within a tile or moved between tiles
+  - Position changes saved to Supabase after move completes
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+#### 📲 Modals:
+- Click a task to open a modal for viewing/editing details
+- Editable only by the task creator (`created_by === currentUserId`)
+- Completion status toggle (`is_completed`) updates:
+  - Title gets strikethrough in UI
+  - Background turns green (`bg-green-200 dark:bg-green-700`)
+  - Status persisted in Supabase
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+#### 🧠 Optimistic Updates:
+- Temporary IDs (`temp-${Date.now()}`) used during optimistic updates
+- Replaced with real Supabase-generated IDs after successful insert/update
+- Rollback if error occurs during Supabase sync
 
-3. Use `cd` to change into the app's directory
+---
 
-   ```bash
-   cd with-supabase-app
-   ```
+### 🎯 Optimistic UI
 
-4. Rename `.env.example` to `.env.local` and update the following:
+Provides an instant, responsive experience:
+- Tile creation, deletion, and title edits
+- Task creation, deletion, and drag-and-drop
+- If Supabase returns an error → UI reverts to last known good state
 
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   ```
+Prevents full page reloads for smoother UX.
 
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://app.supabase.com/project/_/settings/api)
+---
 
-5. You can now run the Next.js local development server:
+### 🌙 Dark Mode Support
 
-   ```bash
-   npm run dev
-   ```
+Fully supports Tailwind’s dark mode:
+- Tiles, modals, and menus use `dark:` modifiers
+- Examples:  
+  - `bg-gray-100 dark:bg-gray-800`
+  - Softened color variants for dark themes (e.g., `dark:bg-yellow-600`)
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+---
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+### ❗ Error Handling
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+- Wrapped in `<ErrorBoundary>` for robust error fallback
+- Shows friendly error messages with retry/refresh options
+- Console logs Supabase errors for debugging
+- Handles hydration mismatches safely
 
-## Feedback and issues
+---
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+### 📱 Responsive Design
 
-## More Supabase examples
+- Flexible layout using `flex` and `overflow-x-auto`
+- Tiles scroll horizontally when screen width is limited
+- Modals use fixed widths (`w-96`) for mobile compatibility
+- Dynamic centering logic based on tile count and viewport size
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+---
+
+### 🧩 TypeScript
+
+- Fully typed interfaces for:
+  - `Task`
+  - `TileWithTasks`
+  - Component props
+- Type safety maintained throughout the app
+
+---
+
+### 💾 Supabase Integration
+
+- Real-time data fetching and updates
+- Tables involved:
+  - `profiles`: User management (`id`, `last_workspace_id`)
+  - `workspaces`: Workspace metadata (`id`, `name`)
+  - `tiles`: Columns (`id`, `title`, `position`, `color`, `workspace_id`)
+  - `tasks`: Task cards (`id`, `tile_id`, `title`, `description`, `position`, `is_completed`, `created_by`, `created_at`)
+- Uses custom PostgreSQL functions:
+  - `update_task_positions(task_ids uuid[], new_positions int[])`
+  - `update_task_positions_and_tile(...)` for cross-column moves
+
+---
+
+## 🛠 Getting Started
+
+### 📦 Prerequisites
+
+- Node.js (v18+)
+- Supabase project set up with these tables:
+  - `profiles` – user info (`id`, `last_workspace_id`)
+  - `workspaces` – workspace info (`id`, `name`)
+  - `tiles` – column data (`id`, `title`, `position`, `color`, `workspace_id`)
+  - `tasks` – task cards (`id`, `tile_id`, `title`, `description`, `position`, `is_completed`, `created_by`, `created_at`)
+- Supabase credentials:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+---
+
+### 📁 Installation
+
+```bash
+# Clone the repo
+git clone <repository-url>
+cd kanban-board
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+echo "NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url" > .env.local
+echo "NEXT_PUBLIC_SUPABase_ANON_KEY=<your-anon-key>" >> .env.local
+
+# Run dev server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view it locally.
+
+---
+
+### 🧑‍💻 Usage
+
+| Action | How To |
+|--------|--------|
+| Sign In | Navigate to `/sign-in` |
+| Setup Profile | Redirected to `/profile/setup` if needed |
+| View Board | Go to `/protected` route |
+| Add Tile | Use “+” button
+| Edit Tile | Open 3-dot menu → "Edit Title"
+| Delete Tile | 3-dot menu → "Remove Tile"
+| Add Task | Click “+” inside a tile or from tile menu
+| Edit/Delete Task | Click task to open modal
+| Drag Task | Use mouse or DnD interaction
+| Toggle Dark Mode | Use system preferences or browser settings
+
+---
+
+### 🏗 Project Structure
+
+```
+components/
+├── drag-drop-wrapper.tsx     # Manages global board state and drag-and-drop
+├── tile.tsx                  # Renders individual tiles and manages color/title menu
+├── task.tsx                  # Task component with drag support
+├── task-modal.tsx            # Modal for editing task details
+├── error-boundaries.tsx      # Wraps app in React error boundary
+└── ...
+
+pages/
+└── protected/
+    └── page.tsx              # Server-side rendering of workspace/tiles/tasks
+
+utils/
+└── supabase/
+    ├── client.ts             # Supabase client for client components
+    └── server.ts             # Supabase server components + auth handling
+```
+
+---
+
+## 🧭 Future Improvements
+
+| Feature | Description |
+|--------|-------------|
+| ✅ Task Color Customization | Already supported in DB — just needs UI implementation |
+| 🔁 Real-Time Collaboration | Using Supabase Realtime/subscriptions |
+| 📊 Task Filtering | Filter tasks by status, date, assignee |
+| 🔄 Real-Time Sync | Update board state without refresh |
+| 🖱️ Tile Reordering | Allow drag-and-drop reordering of columns |
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+- Open an issue for bugs or feature requests
+- Submit pull requests for enhancements or fixes
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**. Feel free to use and modify it as you see fit.
+
+---
+
+Let me know if you'd like this exported as a `.md` file or need help deploying it!

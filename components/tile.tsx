@@ -215,7 +215,7 @@ export default function Tile({
           <h2 className="text-xl font-semibold">{title}</h2>
         )}
         <div className="relative">
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-white-700 hover:text-gray-700 dark:hover:text-gray-300">
             ⋮
           </button>
           {isMenuOpen && (
@@ -254,7 +254,7 @@ export default function Tile({
                     handleChangeColor('yellow');
                     setIsMenuOpen(false);
                   }}
-                  className="w-6 h-6 rounded-full bg-yellow-200 dark:bg-yellow-700 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
+                  className="w-6 h-6 rounded-full bg-yellow-200 dark:bg-yellow-500 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
                   aria-label="Yellow"
                 />
                 <span
@@ -262,7 +262,7 @@ export default function Tile({
                     handleChangeColor('green');
                     setIsMenuOpen(false);
                   }}
-                  className="w-6 h-6 rounded-full bg-green-200 dark:bg-green-700 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
+                  className="w-6 h-6 rounded-full bg-green-200 dark:bg-green-500 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
                   aria-label="Green"
                 />
                 <span
@@ -270,7 +270,7 @@ export default function Tile({
                     handleChangeColor('red');
                     setIsMenuOpen(false);
                   }}
-                  className="w-6 h-6 rounded-full bg-red-200 dark:bg-red-700 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
+                  className="w-6 h-6 rounded-full bg-red-200 dark:bg-red-500 cursor-pointer hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
                   aria-label="Red"
                 />
                 <span

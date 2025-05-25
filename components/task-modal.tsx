@@ -8,13 +8,15 @@ interface TaskModalProps {
   title: string;
   description: string;
   isEditable: boolean;
+  isCompleted: boolean; // Add prop for initial completed state
   onClose: () => void;
-  onUpdate: (title: string, description: string) => void;
+  onUpdate: (title: string, description: string, isCompleted: boolean) => void; // Update to include isCompleted
 }
 
-export default function TaskModal({ id, title: initialTitle, description: initialDescription, isEditable, onClose, onUpdate }: TaskModalProps) {
+export default function TaskModal({ id, title: initialTitle, description: initialDescription, isCompleted, isEditable, onClose, onUpdate }: TaskModalProps) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
+  const [completed, setCompleted] = useState(isCompleted); // Use distinct name to avoid conflict
 
   // Fetch the latest task data when the modal opens
   useEffect(() => {
@@ -22,7 +24,7 @@ export default function TaskModal({ id, title: initialTitle, description: initia
       const supabase = createClient();
       const { data, error } = await supabase
         .from("tasks")
-        .select("title, description")
+        .select("title, description, is_completed")
         .eq("id", id)
         .single();
 
@@ -31,6 +33,7 @@ export default function TaskModal({ id, title: initialTitle, description: initia
       } else {
         setTitle(data.title);
         setDescription(data.description || "");
+        setCompleted(data.is_completed);
       }
     };
 
@@ -43,13 +46,13 @@ export default function TaskModal({ id, title: initialTitle, description: initia
     const supabase = createClient();
     const { error } = await supabase
       .from("tasks")
-      .update({ title, description })
+      .update({ title, description, is_completed: completed })
       .eq("id", id);
 
     if (error) {
       console.error("Error updating task:", error.message);
     } else {
-      onUpdate(title, description); // Notify parent of the update
+      onUpdate(title, description, completed); // Notify parent of the update
       onClose();
     }
   };
@@ -76,6 +79,16 @@ export default function TaskModal({ id, title: initialTitle, description: initia
             disabled={!isEditable}
             className="w-full p-2 rounded border dark:bg-gray-700 dark:border-gray-600"
             rows={4}
+          />
+        </div>
+        <div className="mb-4 flex items-center">
+          <label className="text-sm font-medium mr-2">Completed</label>
+          <input
+            type="checkbox"
+            checked={completed}
+            onChange={(e) => setCompleted(e.target.checked)}
+            disabled={!isEditable}
+            className="h-4 w-4 text-blue-500 dark:text-blue-400"
           />
         </div>
         <div className="flex justify-end gap-2">

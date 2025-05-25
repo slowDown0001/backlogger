@@ -18,7 +18,7 @@ export default async function ProfileSetup({ searchParams }: { searchParams: Pro
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center min-h-screen">
+    <div className="flex-1 flex items-center justify-center">
       <form className="flex flex-col gap-4 w-full max-w-md p-6 bg-white rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-4">Set Up Your Profile</h1>
         <div className="flex flex-col gap-2">

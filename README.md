@@ -237,7 +237,3 @@ Contributions are welcome! Please:
 ## 📄 License
 
 This project is licensed under the **MIT License**. Feel free to use and modify it as you see fit.
-
----
-
-Let me know if you'd like this exported as a `.md` file or need help deploying it!
